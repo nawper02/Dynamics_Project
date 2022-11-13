@@ -27,17 +27,18 @@ def passes_tests(H):
     pos = y[:, 0]    # pos [m]
     vel = y[:, 1]    # velocity [m/s]
 
-    ang = pos / R  # loop angle [rad]
-    fNorm = mass * ((9.81 * np.sin(ang) + (vel ** 2)) / R)  # normal force
-    angDeg = (ang * 180) / np.pi  # loop angle (90 deg is bottom of loop) [deg]
+    ang = pos/R     # loop angle [rad]
+    fNorm = mass * (9.81 * np.sin(ang) + ((vel**2) / R))    # normal force
+    angDeg = (ang*180) / np.pi  # loop angle (90 deg is bottom of loop) [deg]
 
     # Loop over angDeg array
     for index, element in enumerate(angDeg):
         # When an element is found in this range,
-        if 269.5 < element < 270.5:
+        if 260 < element < 280:
             print("Passes top")
+            print(fNorm[index])
             # Check to see if the normal force there is greater than zero
-            if fNorm[index] > -2:
+            if fNorm[index] > 0:
                 print(f"fNorm at top: {fNorm[index]}")
                 print(f"H = {H/0.0254}")
                 print("passes top with non-negative normal force")
@@ -47,16 +48,16 @@ def passes_tests(H):
 
 
 def main():
-    H = 23.8 * 0.0254   # initial guess
+    H = 22.84 * 0.0254   # initial guess
 
     # Loop to increment H and check if the tests are passed
-    #while True:
-    #    H += 0.001
-        #print(H/0.0254)
-    #    tests_passed = passes_tests(H)
-    #    if tests_passed:
-    #        print(f"Drop height found! It is {H/0.0254} inches")
-    #        break
+    while True:
+        H += 0.0001
+        print(H/0.0254)
+        tests_passed = passes_tests(H)
+        if tests_passed:
+            print(f"Drop height found! It is {H/0.0254} inches")
+            break
 
     # Perform final solving of the system
 
