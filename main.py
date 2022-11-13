@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
+from rk4 import rk4
+
 
 # Define system of ODE's
 def func_block(t, y):
@@ -35,29 +37,26 @@ def passes_tests(H):
     for index, element in enumerate(angDeg):
         # When an element is found in this range,
         if 260 < element < 280:
-            print("Passes top")
-            print(fNorm[index])
             # Check to see if the normal force there is greater than zero
             if fNorm[index] > 0:
                 print(f"fNorm at top: {fNorm[index]}")
                 print(f"H = {H/0.0254}")
-                print("passes top with non-negative normal force")
                 return True
     else:
         return False
 
 
 def main():
-    H = 22.84 * 0.0254   # initial guess
+    H = 22 * 0.0254   # initial guess
 
     # Loop to increment H and check if the tests are passed
-    while True:
-        H += 0.0001
-        print(H/0.0254)
-        tests_passed = passes_tests(H)
-        if tests_passed:
-            print(f"Drop height found! It is {H/0.0254} inches")
-            break
+    #while True:
+    #    H += 0.0001
+    #    print(H/0.0254)
+    #    tests_passed = passes_tests(H)
+    #    if tests_passed:
+    #        print(f"Drop height found! It is {H/0.0254} inches")
+    #        break
 
     # Perform final solving of the system
 
