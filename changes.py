@@ -107,7 +107,7 @@ def vLoop(ball, theta, H, dt):
             ag = 9.81 * (np.sin(theta) - (mu_k/np.sin(y)))
         else:
             ag = (9.81 * np.sin(theta)) / (1 + ((2 * m * np.power(rb, 2)) / (5 * np.power(d, 2))))
-            # TODO: Check derivation. hw13 19.5. 5/7 g sin theta?
+            # TODO: Check derivation. hw13 19.5. 5/7 g sin theta? that wasnt track though
         vg += ag * dt
         sg += vg * dt
     return vg
