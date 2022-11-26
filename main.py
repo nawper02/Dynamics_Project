@@ -2,20 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from rk4 import rk4
+from Ball import Ball
 
 
-# TODO: Check slipping condition
+# TODO: Reconfigure so that current state includes acceleration -- need aLoop, need rk4 to not change y[2]
 # TODO: Check analytical result
-
-
-class Ball:
-    def __init__(self, radius, mass):
-        self.m = mass
-        self.r = radius
-        self.gamma = np.arcsin(np.sqrt(np.power((self.r+1.5), 2)+49)/(self.r+1.5))
-        self.d = self.r * np.sin(self.gamma)
-        self.mu_s = np.sin(np.radians(12)) * np.sin(self.gamma)
-        self.mu_k = self.mu_s / 2.0 # GUESS
 
 
 # Define system of ODE's
@@ -23,6 +14,8 @@ def func_block(t, y, ball):
 
     s = y[0]
     v = y[1]
+    a = y[2] # last acceleration, used to check slip condition
+
     theta = s / R
     Fn_tot = ((ball.m / (R-ball.d)) * pow(v, 2) + ball.m * 9.81 * np.sin(theta)) / np.sin(ball.gamma)
 
@@ -30,12 +23,16 @@ def func_block(t, y, ball):
     dydt[0] = v
 
     # if the ball is slipping, the acceleration is
-    if (5/7) * ball.m * 9.81 * np.cos(theta) > ball.mu_s * Fn_tot: #mass * 9.81 * np.cos(theta) > mu * Fn: # TODO CHECK THIS CONDITION
+
+    if (((2/5) * ball.m * pow(ball.r, 2) * a)/pow(ball.d, 2)) > ball.mu_s * Fn_tot: # TODO: CHECK THIS
+        #ball.m * 9.81 * np.cos(theta) > ball.mu_s * Fn_tot: ?
         dydt[1] = 9.81 * np.cos(theta) - ball.mu_k * (((1/(R-ball.d)) * pow(v, 2) + 9.81 * np.sin(theta)) / np.sin(ball.gamma))
 
     # if the ball is rolling, the acceleration is
     else:
         dydt[1] = (9.81 * pow(ball.d, 2) * np.cos(theta)) / (((2.0/5.0) * pow(ball.r, 2)) + pow(ball.d, 2))
+
+    #dydt[2] = dydt[1] # This is last acceleration
 
     return dydt
 
@@ -71,15 +68,14 @@ def compute_initial_conditions(H, ball, dt):
 
     #hLoop = H - R * (1 - np.sin(angInitRad))
     #sRamp = hLoop / np.cos(angInitRad)
-    vLoop = compute_vLoop(ball, theta, H, dt)
     sLoop = R * angInitRad
+    vLoop, aLoop = compute_vLoop(ball, theta, H, dt)
 
-    y0 = [sLoop, vLoop]
+    y0 = [sLoop, vLoop, aLoop]
     return y0
 
 
 def extrapolate_data(pos, vel, ball):
-    mass = ball.m
 
     ang = pos / R  # loop angle [rad]
     angDeg = (ang * 180) / np.pi  # loop angle (90 deg is bottom of loop) [deg]
@@ -108,12 +104,6 @@ def compute_vLoop(ball, theta, H, dt):
     :param H: drop height (m)
     :return: velocity at loop entry
     """
-    d = ball.d
-    rb = ball.r
-    m = ball.m
-    mu_s = ball.mu_s
-    mu_k = ball.mu_k
-    y = ball.gamma
 
     l = (H - R + (R * np.cos(theta))) / np.sin(theta)
 
@@ -121,15 +111,19 @@ def compute_vLoop(ball, theta, H, dt):
     vg = 0
     ag = 0
 
+    Fn_tot = ball.m * 9.81 * np.cos(theta) / np.sin(ball.gamma)
+
     while sg < l:
-        if 0.5 * (m * 9.81 * np.sin(theta) - m * ag) > ((mu_s * m * 9.81) / (2 * np.sin(y))):
-            ag = 9.81 * (np.sin(theta) - (mu_k/np.sin(y)))
+        # If the ball is slipping
+        if (((2/5) * ball.m * pow(ball.r, 2) * ag)/pow(ball.d, 2)) > ball.mu_s * Fn_tot:
+            # Old condition: 0.5 * (m * 9.81 * np.sin(theta) - m * ag) > ((mu_s * m * 9.81) / (2 * np.sin(y)))
+            ag = 9.81 * (np.sin(theta) - (ball.mu_k * np.cos(theta)/np.sin(ball.gamma)))
+        # If the ball is rolling
         else:
-            ag = (9.81 * np.sin(theta)) / (1 + ((2 * m * np.power(rb, 2)) / (5 * np.power(d, 2))))
-            # TODO: Check derivation. hw13 19.5. 5/7 g sin theta?
+            ag = (9.81 * np.sin(theta)) / (1 + ((2 * np.power(ball.r, 2)) / (5 * np.power(ball.d, 2))))
         vg += ag * dt
         sg += vg * dt
-    return vg
+    return vg, ag
 
 
 def compute_rubber_ball(ball):
