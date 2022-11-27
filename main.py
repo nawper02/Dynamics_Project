@@ -17,6 +17,8 @@ from Ball import Ball
 # Define system of ODE's
 def func_block(t, y, ball):
 
+    slipped = False
+
     s = y[0]
     v = y[1]
     a = y[2] # last acceleration, used to check slip condition
@@ -36,14 +38,13 @@ def func_block(t, y, ball):
         if (((2/5) * ball.m * pow(ball.r, 2) * a)/pow(ball.d, 2)) > ball.mu_s * Fn_tot: # TODO: CHECK THIS
             #ball.m * 9.81 * np.cos(theta) > ball.mu_s * Fn_tot: ?
             dydt[1] = 9.81 * np.cos(theta) - ball.mu_k * (((1/(R-ball.d)) * pow(v, 2) + 9.81 * np.sin(theta)) / np.sin(ball.gamma))
+            slipped = True
 
         # if the ball is rolling, the acceleration is
         else:
             dydt[1] = (9.81 * pow(ball.d, 2) * np.cos(theta)) / (((2.0/5.0) * pow(ball.r, 2)) + pow(ball.d, 2))
 
-        #dydt[2] = dydt[1] # This is last acceleration
-
-    return dydt
+    return dydt, slipped
 
 
 # A function that computes if the simulation passes the top of the loop with non-negative normal force
@@ -52,7 +53,7 @@ def passes_tests(H, ball):
     y0 = compute_initial_conditions(H, ball, step)
 
     # Solve ODE
-    t_res, y = rk4(func_block, t, y0, step, ball)
+    t_res, y, slipped_arr = rk4(func_block, t, y0, step, ball)
     pos = y[:, 0]  # pos [m]
     vel = y[:, 1]  # velocity [m/s]
 
@@ -176,7 +177,7 @@ def run_sim_and_plot(H, ball, name):
     y0 = compute_initial_conditions(H, ball, step)
 
     # Solve ODE
-    t_res, y = rk4(func_block, t, y0, step, ball)
+    t_res, y, slipped_arr = rk4(func_block, t, y0, step, ball)
     pos = y[:, 0]  # pos [m]
     vel = y[:, 1]  # velocity [m/s]
 
@@ -190,6 +191,7 @@ def run_sim_and_plot(H, ball, name):
 
     ax1.plot(t, angDeg, '-b', label='Angle (deg)')
     ax2.plot(t, vel, '-r', label='Velocity')
+    ax2.plot(t, slipped_arr, '-g', label='Slip')
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Angle (deg)')
     ax2.set_ylabel('Velocity')
@@ -254,7 +256,7 @@ if __name__ == "__main__":
     angRamp = 50                # DEG
     #mu = 0.213
     step = 0.0005
-    t = np.arange(0, 2, step)    # S
+    t = np.arange(0, 1, step)    # S
     angInit = 90 - angRamp
     angInitRad = np.radians(angInit)
 

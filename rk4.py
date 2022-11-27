@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def rk4(odefun, tspan, y0, h, params):
     """Uses RK4 Method to calculate the solution to an ODE.
         Parameters
@@ -41,6 +42,7 @@ def rk4(odefun, tspan, y0, h, params):
     # Initialize outputs
     t = np.zeros(num_times, dtype=float)
     y = np.zeros((num_times, num_equations), dtype=float)
+    slipped_arr = np.zeros(num_times)
 
     # Assign first row of outputs
     t[0] = tspan[0]
@@ -58,7 +60,9 @@ def rk4(odefun, tspan, y0, h, params):
 
         for j in range(num_equations-1):
             # Compute k1 for all equations
-            dydt = odefun(t[n], y[n], params)
+            dydt, slipped = odefun(t[n], y[n], params)
+            if slipped:
+                slipped_arr[n] = 1
             k1[j] = h * dydt[j]
 
         for j in range(num_equations-1):
@@ -66,7 +70,7 @@ def rk4(odefun, tspan, y0, h, params):
             input_y = y[n].copy()
             for index, element in enumerate(y[n]):
                 input_y[index] += 0.5 * k1[index]
-            dydt = odefun(t[n] + (h/2), input_y, params)
+            dydt, slipped = odefun(t[n] + (h/2), input_y, params)
             k2[j] = h * dydt[j]
 
         for j in range(num_equations-1):
@@ -74,7 +78,7 @@ def rk4(odefun, tspan, y0, h, params):
             input_y = y[n].copy()
             for index, element in enumerate(y[n]):
                 input_y[index] += 0.5 * k2[index]
-            dydt = odefun(t[n] + (h/2), input_y, params)
+            dydt, slipped = odefun(t[n] + (h/2), input_y, params)
             k3[j] = h * dydt[j]
 
         for j in range(num_equations-1):
@@ -82,7 +86,7 @@ def rk4(odefun, tspan, y0, h, params):
             input_y = y[n].copy()
             for index, element in enumerate(y[n]):
                 input_y[index] += k3[index]
-            dydt = odefun(t[n] + h, input_y, params)
+            dydt, slipped = odefun(t[n] + h, input_y, params)
             k4[j] = h * dydt[j]
 
         # Calculate the next state
@@ -93,4 +97,4 @@ def rk4(odefun, tspan, y0, h, params):
         # Set last acceleration for this state to the acceleration from the last state
         y[n+1, 2] = y[n, 1] # Save last acceleration for func_block slip condition
 
-    return t, y
+    return t, y, slipped_arr
