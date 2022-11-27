@@ -4,12 +4,6 @@ from scipy.integrate import odeint
 from rk4 import rk4
 from Ball import Ball
 
-
-# TODO: Check slipping conditions in loop
-# TODO: Check derivation of Fntot in loop
-# TODO: Check roll / slip eq's
-# TODO: Check mu_s computation -- account for different normal forces?
-
 # TODO: Possibly keep track of omega? Compute work done by friction and check cons nrg?
 
 
@@ -24,6 +18,7 @@ def func_block(t, y, ball):
 
     theta = s / R
     Fn_tot = ((ball.m / (R-ball.d)) * pow(v, 2) + ball.m * 9.81 * np.sin(theta)) / np.sin(ball.gamma)
+    Fn_resolved = ((ball.m / (R-ball.d)) * pow(v, 2) + ball.m * 9.81 * np.sin(theta))
 
     dydt = np.zeros(len(y))
     dydt[0] = v
@@ -34,7 +29,7 @@ def func_block(t, y, ball):
 
     else: # if the ball is not rubber
         # if the ball is slipping, the acceleration is
-        if (((2/5) * ball.m * pow(ball.r, 2) * a)/pow(ball.d, 2)) > ball.mu_s * Fn_tot: # TODO: CHECK THIS
+        if (((2/5) * ball.m * pow(ball.r, 2) * a)/pow(ball.d, 2)) > (ball.mu_s * Fn_tot):
             #ball.m * 9.81 * np.cos(theta) > ball.mu_s * Fn_tot: ?
             dydt[1] = 9.81 * np.cos(theta) - ball.mu_k * (((1/(R-ball.d)) * pow(v, 2) + 9.81 * np.sin(theta)) / np.sin(ball.gamma))
             slipped = True
@@ -88,9 +83,9 @@ def extrapolate_data(pos, vel, ball):
     ang = pos / R  # loop angle [rad]
     angDeg = (ang * 180) / np.pi  # loop angle (90 deg is bottom of loop) [deg]
 
-    fNorm_tot = ((ball.m / (R-ball.d)) * pow(vel, 2) + ball.m * 9.81 * np.sin(ang)) / np.sin(ball.gamma)
+    Fn_resolved = ((ball.m / (R-ball.d)) * pow(vel, 2) + ball.m * 9.81 * np.sin(ang))
 
-    return ang, fNorm_tot, angDeg
+    return ang, Fn_resolved, angDeg
 
 
 def compute_drop_height(ball, h_guess):
@@ -228,7 +223,7 @@ def main():
     print(f"Rubber ball d: {rubber.d}")
 
     # Compute drop height for rubber ball (Should be 2.7 * R), last time got 14.514
-    H_rubber = compute_drop_height_bisection(rubber, 0.1, 20.0)
+    H_rubber = compute_drop_height_bisection(rubber, 0.1*0.0254, 20.0*0.0254)
 
     # Compute drop height for steel ball
     H_stainless_steel = compute_drop_height_bisection(stainless_steel, 0.1*0.0254, 20.0*0.0254)
