@@ -5,11 +5,10 @@ from rk4 import rk4
 from Ball import Ball
 
 
-# TODO: Check analytical solution / function / derivation for rubber ball
-# TODO: Check slipping conditions
+# TODO: Check slipping conditions in loop
+# TODO: Check derivation of Fntot in loop
 # TODO: Check roll / slip eq's
-# TODO: Check computation of initial conditions
-# TODO: Check mu computation
+# TODO: Check mu_s computation -- account for different normal forces?
 
 # TODO: Possibly keep track of omega? Compute work done by friction and check cons nrg?
 
@@ -66,7 +65,6 @@ def passes_tests(H, ball):
             # Check to see if the normal force there is greater than zero
             #if fNorm[index] > 0:
             if fNorm[index] > 0:
-                print(f"fNorm at top: {fNorm[index]}")
                 return True
     else:
         return False
@@ -117,15 +115,11 @@ def compute_drop_height_bisection(ball, a, b):
         i += 1
 
         c = (a + b) / 2
-        #tp_a = passes_tests(a, ball)
-        #tp_b = passes_tests(b, ball)
         tp_c = passes_tests(c, ball)
         if tp_c:
             b = c
         if not tp_c:
             a = c
-        # print c every 10 iterations
-        #if i % 10 == 0:
         print(f"Current guess: {c/0.0254} inches")
 
         if abs(a - b) < 0.0001:
@@ -142,7 +136,7 @@ def compute_vLoop(ball, theta, H, dt):
     :return: velocity at loop entry
     """
 
-    l = (H - R + (R * np.cos(theta))) / np.sin(theta)
+    l = (H - (R - (R * np.sin(np.radians(90) - theta)))) / np.sin(theta)
 
     sg = 0
     vg = 0
@@ -153,22 +147,21 @@ def compute_vLoop(ball, theta, H, dt):
     while sg < l:
         # if the ball is rubber, it never slips
         if ball.name == "rubber":
-            ag = (9.81 * np.sin(theta)) / (1 + ((2 * np.power(ball.r, 2)) / (5 * np.power(ball.d, 2))))
+            ag = (9.81 * np.sin(theta) * ball.d * ball.r) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
         else: # if the ball is not rubber
             # If the ball is slipping
-            if (((2/5) * ball.m * pow(ball.r, 2) * ag)/pow(ball.d, 2)) > ball.mu_s * Fn_tot:
-                # Old condition: 0.5 * (m * 9.81 * np.sin(theta) - m * ag) > ((mu_s * m * 9.81) / (2 * np.sin(y)))
-                ag = 9.81 * (np.sin(theta) - (ball.mu_k * np.cos(theta)/np.sin(ball.gamma)))
+            if ball.mu_s * Fn_tot < (2 * ball.m * ball.r * ag) / (5 * ball.d):
+                ag = 9.81 * (np.sin(theta) - (ball.mu_k * np.cos(theta) / np.sin(ball.gamma)))
             # If the ball is rolling
             else:
-                ag = (9.81 * np.sin(theta)) / (1 + ((2 * np.power(ball.r, 2)) / (5 * np.power(ball.d, 2))))
+                ag = (9.81 * np.sin(theta) * ball.d * ball.r) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
         vg += ag * dt
         sg += vg * dt
     return vg, ag
 
 
 def compute_rubber_ball(ball):
-    H = R * (2 + 0.2 * ball.r + ((pow(ball.d, 2)) / (2 * ball.r)))
+    H = (2 * R - ball.d) + (pow(ball.r, 2) / (10 * pow(ball.d, 2))) * (R - ball.d)
     print(f"Height ratio for rubber ball (Should be close to 2.7): {H/R}")
     return H
 
@@ -226,15 +219,21 @@ def main():
     h_guess = H_rubber
     """
 
+    # Compute analytical drop height for rubber ball
+    H_rubber_analytical = compute_rubber_ball(rubber)
+    print(f"Rubber ball analytical drop height: {H_rubber_analytical/0.0254}")
+    # print rubber ball.r
+    print(f"R: {R}")
+    # print rubber ball.d
+    print(f"Rubber ball d: {rubber.d}")
+
     # Compute drop height for rubber ball (Should be 2.7 * R), last time got 14.514
     H_rubber = compute_drop_height_bisection(rubber, 0.1, 20.0)
 
     # Compute drop height for steel ball
-    #H_stainless_steel = compute_drop_height(stainless_steel, h_guess)
     H_stainless_steel = compute_drop_height_bisection(stainless_steel, 0.1*0.0254, 20.0*0.0254)
 
     # Compute drop height for plastic ball
-    #H_plastic = compute_drop_height(plastic, h_guess)
     H_plastic = compute_drop_height_bisection(plastic, 0.1*0.0254, 20.0*0.0254)
 
     # Print all 3 drop heights
