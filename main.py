@@ -5,8 +5,7 @@ from rk4 import rk4
 from Ball import Ball
 
 
-# TODO: Reconfigure so that current state includes acceleration -- need aLoop, need rk4 to not change y[2]
-# TODO: Check analytical result
+# TODO: Check analytical solution / derivation for rubber ball
 
 
 # Define system of ODE's
@@ -43,7 +42,7 @@ def passes_tests(H, ball):
     y0 = compute_initial_conditions(H, ball, step)
 
     # Solve ODE
-    y = rk4(func_block, t, y0, step, ball)
+    t_res, y = rk4(func_block, t, y0, step, ball)
     pos = y[:, 0]  # pos [m]
     vel = y[:, 1]  # velocity [m/s]
 
@@ -135,9 +134,10 @@ def compute_rubber_ball(ball):
 
 def run_sim_and_plot(H, ball, name):
     y0 = compute_initial_conditions(H, ball, step)
+    print(y0)
 
     # Solve ODE
-    y = rk4(func_block, t, y0, step, ball)
+    t_res, y = rk4(func_block, t, y0, step, ball)
     pos = y[:, 0]  # pos [m]
     vel = y[:, 1]  # velocity [m/s]
 
@@ -193,6 +193,12 @@ def main():
     run_sim_and_plot(H_rubber, rubber, "rubber")
     run_sim_and_plot(H_plastic, plastic, "plastic")
     run_sim_and_plot(H_stainless_steel, stainless_steel, "stainless_steel")
+    """
+    Height ratio for rubber ball (Should be close to 2.7): 2.0033839300411524
+    [0.08866272600131193, 1.8657995712490034, 6.296416183003713]
+    [0.08866272600131193, 1.8633017911431131, 6.296416183003712]
+    [0.08866272600131193, 1.8594643041348715, 6.296416183003713]
+    """
 
 
 # Entry point
@@ -200,7 +206,7 @@ if __name__ == "__main__":
 
     # Initialize global variables
     R = 5   * 0.0254            # IN TO M
-    angRamp = 50                # DEG
+    angRamp = 40                # DEG
     #mu = 0.213
     step = 0.01
     t = np.arange(0, 2, step)    # S
@@ -208,8 +214,8 @@ if __name__ == "__main__":
     angInitRad = np.radians(angInit)
 
     # Create ball objects
-    stainless_steel = Ball(14e-3, 11e-3)
-    plastic = Ball(15e-5, 3e-3)
-    rubber = Ball(2.8e-3, 15.9e-3)
+    stainless_steel = Ball(14e-3/2, 11e-3)
+    plastic = Ball(15e-3/2, 3e-3)
+    rubber = Ball(15.9e-3/2, 2.8e-3)
 
     main()

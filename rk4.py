@@ -87,10 +87,10 @@ def rk4(odefun, tspan, y0, h, params):
 
         # Calculate the next state
         t[n + 1] = t[n] + h
-        y[n+1, 2] = y[n, 1] # Save last acceleration for func_block slip condition
         for i in range(num_equations-1):
             y[n+1, i] = y[n, i] + (1.0/6.0) * (k1[i] + (2 * k2[i]) + (2 * k3[i]) + k4[i])
 
         # Set last acceleration for this state to the acceleration from the last state
+        y[n+1, 2] = y[n, 1] # Save last acceleration for func_block slip condition
 
     return t, y
