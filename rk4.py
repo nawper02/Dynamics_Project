@@ -29,7 +29,7 @@ def rk4(odefun, tspan, y0, h, params):
             evaluated.
         Notes
         -----
-        I'm very proud of this function as it should be able to handle any number of equations!
+        The previous acceleration is stored to check slipping condition.
         """
 
     tspan = np.asarray(tspan)

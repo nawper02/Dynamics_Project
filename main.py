@@ -11,7 +11,7 @@ from Ball import Ball
 # TODO: Check computation of initial conditions
 # TODO: Check mu computation
 
-# TODO: Possibly keep track of omega?
+# TODO: Possibly keep track of omega? Compute work done by friction and check cons nrg?
 
 
 # Define system of ODE's

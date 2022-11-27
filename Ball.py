@@ -1,5 +1,4 @@
 import numpy as np
-# Test
 
 class Ball:
     def __init__(self, radius, mass, name):
