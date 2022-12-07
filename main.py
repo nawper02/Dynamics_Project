@@ -122,6 +122,32 @@ def compute_drop_height_bisection(ball, a, b):
             return c
 
 
+def compute_vLoop2(ball, theta, H, dt):
+
+    l = (H - (R - (R * np.sin(np.radians(90) - theta)))) / np.sin(theta)
+
+    Fn_tot = ball.m * 9.81 * np.cos(theta) / np.sin(ball.gamma)
+    f_max = ball.mu_s * Fn_tot
+    f_req = (ball.m * 9.81 * np.sin(theta)) / (1 + ((5 * pow(ball.d, 2)) / (2 * pow(ball.r, 2))))
+
+    # if the ball is rubber, it never slips
+    if ball.name == "rubber":
+        ag = (9.81 * np.sin(theta) * pow(ball.d, 2)) / (((2 / 5) * pow(ball.r, 2)) + pow(ball.d, 2))
+        vg = np.sqrt(2 * ag * l)
+        return vg, ag
+    else:  # if the ball is not rubber
+        # If the ball slips
+        if f_req > f_max:
+            ag = ag = 9.81 * (np.sin(theta) - (ball.mu_k * np.cos(theta) / np.sin(ball.gamma)))
+            vg = np.sqrt(2 * ag * l)
+            return vg, ag
+        # If the ball rolls
+        else:
+            ag = (9.81 * np.sin(theta) * pow(ball.d, 2)) / (((2 / 5) * pow(ball.r, 2)) + pow(ball.d, 2))
+            vg = np.sqrt(2 * ag * l)
+            return vg, ag
+
+
 def compute_vLoop(ball, theta, H, dt):
     """
     :param dt:
@@ -138,18 +164,20 @@ def compute_vLoop(ball, theta, H, dt):
     ag = 0
 
     Fn_tot = ball.m * 9.81 * np.cos(theta) / np.sin(ball.gamma)
+    f_max = ball.mu_s * Fn_tot
+    f_req = (ball.m * 9.81 * np.sin(theta)) / (1 + ((5 * pow(ball.d, 2)) / (2 * pow(ball.r, 2))))
 
     while sg < l:
         # if the ball is rubber, it never slips
         if ball.name == "rubber":
-            ag = (9.81 * np.sin(theta) * ball.d * ball.r) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
+            ag = (9.81 * np.sin(theta) * pow(ball.d, 2)) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
         else: # if the ball is not rubber
             # If the ball is slipping
-            if ball.mu_s * Fn_tot < (2 * ball.m * ball.r * ag) / (5 * ball.d):
+            if f_req > f_max:
                 ag = 9.81 * (np.sin(theta) - (ball.mu_k * np.cos(theta) / np.sin(ball.gamma)))
             # If the ball is rolling
             else:
-                ag = (9.81 * np.sin(theta) * ball.d * ball.r) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
+                ag = (9.81 * np.sin(theta) * pow(ball.d, 2)) / (((2/5) * pow(ball.r, 2)) + pow(ball.d, 2))
         vg += ag * dt
         sg += vg * dt
     return vg, ag
@@ -217,10 +245,6 @@ def main():
     # Compute analytical drop height for rubber ball
     H_rubber_analytical = compute_rubber_ball(rubber)
     print(f"Rubber ball analytical drop height: {H_rubber_analytical/0.0254}")
-    # print rubber ball.r
-    print(f"R: {R}")
-    # print rubber ball.d
-    print(f"Rubber ball d: {rubber.d}")
 
     # Compute drop height for rubber ball (Should be 2.7 * R), last time got 14.514
     H_rubber = compute_drop_height_bisection(rubber, 0.1*0.0254, 20.0*0.0254)
@@ -232,9 +256,15 @@ def main():
     H_plastic = compute_drop_height_bisection(plastic, 0.1*0.0254, 20.0*0.0254)
 
     # Print all 3 drop heights
-    print(f"\nDrop height for rubber ball: {H_rubber/0.0254} inches")
+    print(f"\nRubber ball analytical drop height: {H_rubber_analytical/0.0254}")
+    print(f"Drop height for rubber ball (Numerical Solution): {H_rubber/0.0254} inches")
     print(f"Drop height for stainless steel ball: {H_stainless_steel/0.0254} inches")
     print(f"Drop height for plastic ball: {H_plastic/0.0254} inches")
+
+    print(f"\n20% losses: Rubber ball analytical drop height: {(H_rubber_analytical/0.0254)*1.2}")
+    print(f"20% losses: Drop height for rubber ball (Numerical Solution): {(H_rubber/0.0254)*1.2} inches")
+    print(f"20% losses: Drop height for stainless steel ball: {(H_stainless_steel/0.0254)*1.2} inches")
+    print(f"20% losses: Drop height for plastic ball: {(H_plastic/0.0254)*1.2} inches")
 
     # Simulate and plot all 3 balls
     run_sim_and_plot(H_rubber, rubber, "rubber")
