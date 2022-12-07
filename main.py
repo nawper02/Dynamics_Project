@@ -266,6 +266,11 @@ def main():
     print(f"20% losses: Drop height for stainless steel ball: {(H_stainless_steel/0.0254)*1.2} inches")
     print(f"20% losses: Drop height for plastic ball: {(H_plastic/0.0254)*1.2} inches")
 
+    print(f"\n20% losses: Rubber ball analytical drop height: {(H_rubber_analytical/0.0254)*1.2}")
+    print(f"20% losses: Drop height for rubber ball (Numerical Solution): {(H_rubber/0.0254)*1.2} inches")
+    print(f"20% losses: Drop height for stainless steel ball, with confidence in rubber: {(H_rubber/0.0254)*1.4} inches")
+    print(f"20% losses: Drop height for plastic ball, with confidence in rubber: {(H_rubber/0.0254)*1.5} inches")
+
     # Simulate and plot all 3 balls
     run_sim_and_plot(H_rubber, rubber, "rubber")
     run_sim_and_plot(H_plastic, plastic, "plastic")
